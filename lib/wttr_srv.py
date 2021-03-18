@@ -133,7 +133,7 @@ def get_answer_language_and_view(request):
     hostname = request.headers['Host']
     if hostname != 'wttr.in' and hostname.endswith('.wttr.in'):
         lang = hostname[:-8]
-        if lang.startswith("v2"):
+        if lang.startswith("v2") or lang.startswith("v3"):
             view_name = lang
             lang = None
 
@@ -155,7 +155,9 @@ def get_output_format(query, parsed_query):
     Return new location (can be rewritten)
     """
 
-    if ('view' in query and not query["view"].startswith("v2")) \
+    if ('view' in query
+            and not query["view"].startswith("v2")
+            and not query["view"].startswith("v3")) \
         or parsed_query.get("png_filename") \
         or query.get('force-ansi'):
         return False
@@ -215,18 +217,19 @@ def _response(parsed_query, query, fast_mode=False):
         output = get_wetter(parsed_query)
 
     if parsed_query.get('png_filename'):
-        # originally it was just a usual function call,
-        # but it was a blocking call, so it was moved
-        # to separate threads:
-        #
-        #    output = fmt.png.render_ansi(
-        #        output, options=parsed_query)
-        result = TASKS.spawn(fmt.png.render_ansi, cache._update_answer(output), options=parsed_query)
-        output = result.get()
+        if parsed_query.get("view") != "v3":
+            # originally it was just a usual function call,
+            # but it was a blocking call, so it was moved
+            # to separate threads:
+            #
+            #    output = fmt.png.render_ansi(
+            #        output, options=parsed_query)
+            result = TASKS.spawn(fmt.png.render_ansi, cache._update_answer(output), options=parsed_query)
+            output = result.get()
     else:
         if query.get('days', '3') != '0' \
             and not query.get('no-follow-line') \
-            and ((parsed_query.get("view") or "v2")[:2] in ["v2"]):
+            and ((parsed_query.get("view") or "v2")[:2] in ["v2", "v3"]):
             if parsed_query['html_output']:
                 output = add_buttons(output)
             else:
@@ -298,7 +301,7 @@ def parse_request(location, request, query, fast_mode=False):
         location, override_location_name, full_address, country, query_source_location, hemisphere = \
                 location_processing(parsed_query["location"], parsed_query["ip_addr"])
 
-        us_ip = query_source_location[1] == 'United States' \
+        us_ip = query_source_location[2] in ["United States", "United States of America"] \
                 and 'slack' not in parsed_query['user_agent']
         query = parse_query.metric_or_imperial(query, lang, us_ip=us_ip)
 
@@ -372,6 +375,12 @@ def wttr(location, request):
         if not response:
             parsed_query = parse_request(location, request, query)
             response = _response(parsed_query, query)
+            #if not response or (isinstance(response, str) and not response.strip()):
+            #    return RuntimeError("Empty answer")
+
+            if parsed_query["location"] == NOT_FOUND_LOCATION:
+                http_code = 404
+
     # pylint: disable=broad-except
     except Exception as exception:
         logging.error("Exception has occured", exc_info=1)

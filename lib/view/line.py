@@ -25,9 +25,10 @@ from astral.sun import sun
 
 import pytz
 
-from constants import WWO_CODE, WEATHER_SYMBOL, WIND_DIRECTION, WEATHER_SYMBOL_WIDTH_VTE
+from constants import WWO_CODE, WEATHER_SYMBOL, WIND_DIRECTION, WEATHER_SYMBOL_WIDTH_VTE, WEATHER_SYMBOL_PLAIN
 from weather_data import get_weather_data
 from . import v2
+from . import v3
 from . import prometheus
 
 PRECONFIGURED_FORMAT = {
@@ -102,6 +103,14 @@ def render_condition_fullname(data, query):
         weather_condition = found[0]['value']
     except KeyError:
         weather_condition = ''
+
+    return weather_condition
+
+def render_condition_plain(data, query):
+    """Plain text weather condition (x)
+    """
+
+    weather_condition = WEATHER_SYMBOL_PLAIN[WWO_CODE[data['weatherCode']]]
 
     return weather_condition
 
@@ -233,11 +242,22 @@ def render_zenith(data, query, local_time_of):
     Local time of zenith"""
     return local_time_of("noon")
 
+def render_local_time(data, query, local_time_of):
+    """local_time (T)
+    Local time"""
+    return "%{{NOW("+ local_time_of("TZ") +")}}"
+
+def render_local_timezone(data, query, local_time_of):
+    """local_time (Z)
+    Local time"""
+    return local_time_of("TZ")
+
 ##################################
 
 FORMAT_SYMBOL = {
     'c':    render_condition,
     'C':    render_condition_fullname,
+    'x':    render_condition_plain,
     'h':    render_humidity,
     't':    render_temperature,
     'f':    render_feel_like_temperature,
@@ -256,6 +276,9 @@ FORMAT_SYMBOL_ASTRO = {
     'S':    render_sunrise,
     's':    render_sunset,
     'z':    render_zenith,
+
+    'T':    render_local_time,
+    'Z':    render_local_timezone,
 }
 
 def render_line(line, data, query):
@@ -281,7 +304,8 @@ def render_line(line, data, query):
                 .replace(hour=0, minute=0, second=0, microsecond=0)
         current_sun = sun(city.observer, date=datetime_day_start)
 
-        local_time_of = lambda x: current_sun[x]\
+        local_time_of = lambda x: city.timezone if x == "TZ" else \
+                                     current_sun[x]\
                                     .replace(tzinfo=pytz.utc)\
                                     .astimezone(local_tz)\
                                     .strftime("%H:%M:%S")
@@ -341,11 +365,14 @@ def format_weather_data(query, parsed_query, data):
         return prometheus.render_prometheus(data['data'])
     if format_line[:2] == "v2":
         return v2.main(query, parsed_query, data)
+    if format_line[:2] == "v3":
+        return v3.main(query, parsed_query, data)
 
     current_condition = data['data']['current_condition'][0]
     current_condition['location'] = parsed_query["location"]
     current_condition['override_location'] = parsed_query["override_location_name"]
     output = render_line(format_line, current_condition, query)
+    output = output.rstrip("\n").replace(r"\n", "\n")
     return output
 
 def wttr_line(query, parsed_query):
@@ -358,7 +385,7 @@ def wttr_line(query, parsed_query):
 
     data = get_weather_data(location, lang)
     output = format_weather_data(query, parsed_query, data)
-    return output.rstrip("\n").replace(r"\n", "\n")
+    return output
 
 def main():
     """

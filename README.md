@@ -157,6 +157,7 @@ To specify your own custom output format, use the special `%`-notation:
 ```
     c    Weather condition,
     C    Weather condition textual name,
+    x    weather contidion, plain-text symbol,
     h    Humidity,
     t    Temperature (Actual),
     f    Temperature (Feels Like),
@@ -164,14 +165,16 @@ To specify your own custom output format, use the special `%`-notation:
     l    Location,
     m    Moonphase 🌑🌒🌓🌔🌕🌖🌗🌘,
     M    Moonday,
-    p    precipitation (mm),
+    p    precipitation (mm/3 hours),
     P    pressure (hPa),
 
     D    Dawn*,
     S    Sunrise*,
     z    Zenith*,
     s    Sunset*,
-    d    Dusk*.
+    d    Dusk*,
+    T    current time*,
+    Z    local timezone.
 
 (*times are shown in the local timezone)
 ```
@@ -185,6 +188,9 @@ So, these two calls are the same:
     London: ⛅️ +7⁰C
 ```
 Keep in mind, that when using in `tmux.conf`, you have to escape `%` with `%`, i.e. write there `%%` instead of `%`.
+
+The output does not contain new line by default, when the %-notation is used, but it does contain it when preconfigured format (`1`,`2`,`3` etc.)
+are used. To have the new line in the output when the %-notation is used, use '\n' and single quotes when doing a query from the shell.
 
 In programs, that are querying the service automatically (such as tmux), it is better to use some reasonable update interval. In tmux, you can configure it with `status-interval`.
 
@@ -233,7 +239,10 @@ $ cat ~/.config/fontconfig/fonts.conf
 </fontconfig>
 ```
 
-(to apply the configuration, run `fc-cache -f -v`)
+(to apply the configuration, run `fc-cache -f -v`).
+
+In some cases, `tmux` and the terminal understanding of some emoji characters may differ, which may
+cause strange effects similar to that described in #579.
 
 ## Data-rich output format (v2)
 
@@ -322,6 +331,7 @@ Terminal with inline images protocols support:
 | Jexer                 |   X11     |   yes         |   Sixel   |
 | GNOME Terminal        |   X11     |   [in-progress](https://gitlab.gnome.org/GNOME/vte/-/issues/253) |   Sixel   |
 | alacritty             |   X11     |   [in-progress](https://github.com/alacritty/alacritty/issues/910) |  Sixel   |
+| foot                  |  Wayland  |   yes         |   Sixel   |
 | DomTerm               |   Web     |   yes         |   Sixel   |
 | Yaft                  |   FB      |   yes         |   Sixel   |
 | iTerm2                |   Mac OS X|   yes         |   IIP     |

@@ -1,4 +1,14 @@
+   : Снегопад                                    : Low drifting snow                   :
+   : Местами туман                               : Patches of fog                      :
+   : Морось                                      : Drizzle                             :
+   : Лёгкая морось                               : Light drizzle                       :
+   : Снег                                        : Snow                                :
+   : Стелющийся туман                            : Shallow fog                         :
+   : Ледяной дождь                               : Freezing rain                       :
    : Проливной дождь                             : Rain shower                         :
+   : Лёгкий снег с дождём                        : Light rain and snow                 :
+   : Снег с дождём                               : Snow shower                         :
+   : Сильный снег с дождём                       : Heave snow shower                   :
 113: Ясно                                        : Clear                               :
 113: Солнечно                                    : Sunny                               :
 116: Переменная облачность                       : Partly cloudy                       :
@@ -10,7 +20,7 @@
 182: Местами дождь со снегом                     : Patchy sleet possible               :
 185: Местами замерзающая морось                  : Patchy freezing drizzle possible    :
 200: Местами грозы                               : Thundery outbreaks possible         :
-227: Поземок                                     : Blowing snow                        :
+227: Позёмок                                     : Blowing snow                        :
 230: Метель                                      : Blizzard                            :
 248: Туман                                       : Fog                                 :
 260: Переохлажденный туман                       : Freezing fog                        :
